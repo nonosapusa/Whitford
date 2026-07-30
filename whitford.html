@@ -269,7 +269,6 @@
   </div>
   <div class="roster" id="roster"></div>
   <div class="roster-foot">
-    <button class="add" id="addBtn" type="button">Add a player</button>
     <label class="toggle"><input type="checkbox" id="lowBtn"> Play strokes off the low handicap</label>
   </div>
 
@@ -758,7 +757,6 @@ function renderRoster(){
                 title="${players.length<=4?"Four players minimum":"Remove player"}"
                 aria-label="Remove player ${i+1}">&times;</button>
       </div>`).join("");
-  document.getElementById("addBtn").disabled = players.length >= 8;
 }
 const escapeAttr = s => String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 
@@ -857,9 +855,6 @@ document.addEventListener("click", e => {
   if (kill && players.length > 4){
     players = players.filter(p => p.id !== +kill.dataset.kill);
     renderRoster(); renderCard(); refresh(); return;
-  }
-  if (e.target.id === "addBtn" && players.length < 8){
-    players.push(blank()); renderRoster(); renderCard(); refresh(); return;
   }
   const side = e.target.closest("[data-side]");
   if (side){
