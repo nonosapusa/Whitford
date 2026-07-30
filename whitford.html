@@ -46,6 +46,7 @@
 
   /* ---------- masthead ---------- */
   .masthead{text-align:center;padding-bottom:22px;border-bottom:2px solid var(--ink);position:relative}
+  .sync-status{position:absolute;top:0;right:0;font-size:11px;font-family:var(--data);color:var(--muted);letter-spacing:.04em}
   .crest{
     width:52px;height:52px;margin:0 auto 14px;
     display:grid;place-items:center;
@@ -287,6 +288,7 @@
     <h1>Whitford Country Club</h1>
     <div class="place">Exton, Pennsylvania</div>
     <div class="architects">Course architects William and David Gordon &middot; Par 72</div>
+    <span class="sync-status" id="syncStatus">Connecting…</span>
   </header>
 
   <h2>Choose your tees</h2>
@@ -370,7 +372,24 @@
   </p>
 </main>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDv6gDsPAeTDNl9YfLQQgOTA82XmDc7a00",
+  authDomain: "whitford-1a9fa.firebaseapp.com",
+  databaseURL: "https://whitford-1a9fa-default-rtdb.firebaseio.com",
+  projectId: "whitford-1a9fa",
+  storageBucket: "whitford-1a9fa.firebasestorage.app",
+  messagingSenderId: "508945825608",
+  appId: "1:508945825608:web:d95f0347a96d9422fe3d7d"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const SESSION = "round1";
+const dbRef   = ref(db, SESSION);
+
 const PAR   = [4,3,4,5,3,4,4,4,5, 4,4,5,3,4,4,5,3,4];
 const M_SI  = [15,11,5,1,17,9,7,3,13, 14,12,4,18,8,2,10,16,6];
 const F_SI  = [7,15,3,1,17,9,11,13,5, 8,14,6,16,2,12,10,18,4];
@@ -393,8 +412,60 @@ let lowMode = false;
 let seq = 0;
 let players = [];
 let nassau = {mode:"pairs", f:5, b:5, t:10};
+let ignoreRemote = false; // prevent echo when we push our own change
+
 const blank = () => ({id:++seq, name:"", hi:"", email:"",
   team: Math.floor(players.length/2) % 2 === 0 ? "A" : "B", scores:Array(18).fill(null)});
+
+/* --- sync helpers --- */
+let syncTimer;
+function pushState(){
+  ignoreRemote = true;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    set(dbRef, {
+      tee,
+      lowMode,
+      nassau,
+      players: players.map(p => ({
+        id: p.id, name: p.name, hi: p.hi, email: p.email,
+        team: p.team, scores: p.scores.map(v => v === null ? -1 : v)
+      }))
+    }).then(() => {
+      ignoreRemote = false;
+      setSyncStatus("saved");
+    }).catch(() => setSyncStatus("error"));
+    setSyncStatus("saving");
+  }, 400);
+}
+
+function setSyncStatus(s){
+  const el = document.getElementById("syncStatus");
+  if (!el) return;
+  el.textContent = s === "saving" ? "Syncing…" : s === "saved" ? "Live" : "Sync error";
+  el.style.color = s === "error" ? "var(--pencil)" : s === "saved" ? "var(--ink)" : "var(--muted)";
+}
+
+function applyRemote(data){
+  if (!data) return;
+  tee      = data.tee      || "blue";
+  lowMode  = data.lowMode  || false;
+  nassau   = data.nassau   || {mode:"pairs", f:5, b:5, t:10};
+  seq = 0;
+  players  = (data.players || []).map(p => ({
+    ...p,
+    id: ++seq,
+    scores: (p.scores || []).map(v => v === -1 ? null : v)
+  }));
+  // sync countSel to match
+  const countSel = document.getElementById("playerCount");
+  if (countSel) countSel.value = String(players.length);
+  document.getElementById("lowBtn").checked = lowMode;
+  document.querySelectorAll("#modeSeg button")
+    .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === nassau.mode)));
+  renderTees(); renderRoster(); renderCard(); refresh();
+  setSyncStatus("saved");
+}
 
 /* --- handicap math --- */
 function parseHi(raw){
@@ -403,7 +474,7 @@ function parseHi(raw){
   const m = s.match(/^([+-]?)\s*(\d+(?:\.\d+)?)$/);
   if (!m) return null;
   const n = parseFloat(m[2]);
-  return m[1] === "+" ? -n : n;      // a plus handicap plays to a negative index
+  return m[1] === "+" ? -n : n;
 }
 function courseHandicap(hi){
   const t = TEES[tee];
@@ -432,7 +503,7 @@ const SEGS = [
   {key:"b", label:"Back nine",  holes:BACK},
   {key:"t", label:"All 18",     holes:FRONT.concat(BACK)}
 ];
-const nameOf  = (p,i) => p.name.trim() || `Player ${i+1}`;
+const nameOf = (p,i) => p.name.trim() || `Player ${i+1}`;
 
 function computeLedger(chs){
   const stake = {f:nassau.f, b:nassau.b, t:nassau.t};
@@ -517,7 +588,7 @@ const holeTxt = v => v.h === 0 ? "AS" : Math.abs(v.h) + (v.h > 0 ? " up" : " dn"
 const holeCell = (seg,flag) =>
   `<td class="${seg.h>0?"pos":seg.h<0?"neg":"nil"}">${holeTxt(seg)}${flag?"*":""}</td>`;
 
-/* --- the card as a drawing, rendered to either PDF or PNG --- */
+/* --- the card as a drawing --- */
 const CARD_W = 792, CARD_H = 612;
 const CC = {ink:[0.047,0.231,0.165], red:[0.702,0.149,0.118], shade:[0.957,0.937,0.890],
             rule:[0.85,0.82,0.75], grey:[0.42,0.40,0.34], gold:[0.718,0.604,0.357],
@@ -585,11 +656,11 @@ function cardOps(){
       if (g>0) text(g<=2?".".repeat(g):"."+g, c.x+c.w-4, r.y0+8, "mono", 6, CC.red, "right");
       if (s!==null){
         used++; st+=g; (i<9?out+=s:inn+=s);
-        const d = s - PAR[i], cx = mid(c), cy = r.y0 + r.h/2;
-        if (d < 0) circle(cx, cy, 8.5, 1.2, CC.red);
-        else if (d === 1) box(cx-8.5, cy-8.5, 17, 17, 1.2, CC.black);
-        else if (d >= 2){ box(cx-9.5, cy-9.5, 19, 19, 1.1, CC.black); box(cx-7, cy-7, 14, 14, 1.1, CC.black); }
-        text(s, cx, base(r,12), "mono", 12, CC.black, "center");
+        const d = s - PAR[i], cx2 = mid(c), cy = r.y0 + r.h/2;
+        if (d < 0) circle(cx2, cy, 8.5, 1.2, CC.red);
+        else if (d === 1) box(cx2-8.5, cy-8.5, 17, 17, 1.2, CC.black);
+        else if (d >= 2){ box(cx2-9.5, cy-9.5, 19, 19, 1.1, CC.black); box(cx2-7, cy-7, 14, 14, 1.1, CC.black); }
+        text(s, cx2, base(r,12), "mono", 12, CC.black, "center");
       }
     }
     const cell=(k,v,f,sz,col)=>text(v, mid(K(k)), base(r,sz), f, sz, col, "center");
@@ -613,7 +684,7 @@ function cardOps(){
 const PDF_FONT = {mono:"/F1", monoB:"/F2", sans:"/F3", sansB:"/F4"};
 function pdfBlob(){
   const ASCII = s => String(s).replace(/[·•]/g,"-").replace(/[—–−]/g,"-")
-    .replace(/[’‘]/g,"'").replace(/[“”]/g,'"').replace(/[^\x20-\x7E]/g,"");
+    .replace(/['']/g,"'").replace(/[""]/g,'"').replace(/[^\x20-\x7E]/g,"");
   const esc = s => ASCII(s).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
   const N = n => n.toFixed(2);
   const rgb = c => c.map(v => v.toFixed(3)).join(" ");
@@ -630,7 +701,6 @@ function pdfBlob(){
     return `${rgb(o.color)} rg BT ${PDF_FONT[o.font]} ${o.size} Tf ${N(x)} ${N(CARD_H-o.y)} Td (${esc(o.s)}) Tj ET`;
   });
   const content = parts.join("\n");
-
   const objs=[];
   objs[1]="<</Type/Catalog/Pages 2 0 R>>";
   objs[2]="<</Type/Pages/Kids[3 0 R]/Count 1>>";
@@ -640,14 +710,12 @@ function pdfBlob(){
   objs[6]="<</Type/Font/Subtype/Type1/BaseFont/Courier-Bold>>";
   objs[7]="<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>";
   objs[8]="<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold>>";
-
   let pdf="%PDF-1.4\n"; const off=[];
   for(let i=1;i<objs.length;i++){ off[i]=pdf.length; pdf += `${i} 0 obj\n${objs[i]}\nendobj\n`; }
   const xref=pdf.length;
   pdf += `xref\n0 ${objs.length}\n0000000000 65535 f \n`;
   for(let i=1;i<objs.length;i++) pdf += String(off[i]).padStart(10,"0")+" 00000 n \n";
   pdf += `trailer\n<</Size ${objs.length}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`;
-
   const bytes = new Uint8Array(pdf.length);
   for (let i=0;i<pdf.length;i++) bytes[i] = pdf.charCodeAt(i) & 0xFF;
   return new Blob([bytes], {type:"application/pdf"});
@@ -696,8 +764,6 @@ async function sendCard(){
   const filename = `Whitford-scorecard-${stamp}.${png ? "png" : "pdf"}`;
   const blob = png ? await pngBlob() : pdfBlob();
   const to = players.map(p => p.email.trim()).filter(Boolean);
-
-  // iPhone and Android: the share sheet hands Mail the file already attached
   if (navigator.canShare && typeof File === "function"){
     const file = new File([blob], filename, {type: blob.type});
     if (navigator.canShare({files:[file]})){
@@ -714,14 +780,11 @@ async function sendCard(){
       }
     }
   }
-
-  // desktop: save the file, open an addressed draft, attach it yourself
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 20000);
-
   const subject = encodeURIComponent(`Whitford CC - ${new Date().toLocaleDateString()}`);
   const body = encodeURIComponent("Today's card is attached.");
   setTimeout(() => { window.location.href = `mailto:${to.map(encodeURIComponent).join(",")}?subject=${subject}&body=${body}`; }, 500);
@@ -739,6 +802,7 @@ document.getElementById("fmtSeg").addEventListener("click", e => {
   document.querySelectorAll("#fmtSeg button")
     .forEach(x => x.setAttribute("aria-pressed", String(x.dataset.fmt === shareFmt)));
 });
+
 function renderLedger(chs){
   const wrap = document.getElementById("ledgerwrap"), note = document.getElementById("wagerNote");
   const r = computeLedger(chs);
@@ -760,7 +824,6 @@ function renderLedger(chs){
   note.textContent = r.note;
 }
 
-/* --- tee markers --- */
 function renderTees(){
   document.getElementById("tees").innerHTML = Object.entries(TEES).map(([key,t]) => `
     <button class="tee" type="button" data-tee="${key}" aria-pressed="${key===tee}" style="--peg:${t.peg}">
@@ -771,7 +834,6 @@ function renderTees(){
     </button>`).join("");
 }
 
-/* --- roster --- */
 function renderRoster(){
   const el = document.getElementById("roster");
   const teams = nassau.mode === "teams";
@@ -788,17 +850,16 @@ function renderRoster(){
         <div class="ch-out" data-ch="${p.id}">—</div>
         ${teams?`<button class="teamchip" type="button" data-side="${p.id}" data-team="${p.team}"
                  aria-label="Side for player ${i+1}, currently team ${p.team}">${p.team}</button>`:""}
-        <button class="kill" type="button" data-kill="${p.id}" ${players.length<=4?"disabled":""}
-                title="${players.length<=4?"Four players minimum":"Remove player"}"
+        <button class="kill" type="button" data-kill="${p.id}" ${players.length<=2?"disabled":""}
+                title="${players.length<=2?"Two players minimum":"Remove player"}"
                 aria-label="Remove player ${i+1}">&times;</button>
       </div>`).join("");
 }
+
 const escapeAttr = s => String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 
-/* --- scorecard --- */
 function renderCard(){
   const t = TEES[tee];
-  const cols = players.length;
   const head = `<thead><tr>
       <th>Hole</th><th>${t.label}</th><th>Par</th><th>${t.siLabel}</th>
       ${players.map((p,i)=>`<th class="pname"><input type="text" class="name-in" data-id="${p.id}"
@@ -816,7 +877,7 @@ function renderCard(){
           value="${p.scores[i] ?? ""}" aria-label="Hole ${i+1}, player ${p.name || "unnamed"}"></td>`).join("")}
     </tr>`;
 
-  const band = (label,key,yds) => `<tr class="band ${key==='tot'?'tot':''}">
+  const band = (label,key,yds) => `<tr class="band">
       <td class="holecol">${label}</td><td>${yds}</td><td>36</td><td></td>
       ${players.map(p=>`<td data-band="${key}-${p.id}"></td>`).join("")}
     </tr>`;
@@ -842,18 +903,15 @@ function renderCard(){
     "</tbody>";
 }
 
-/* --- patch every computed number without rebuilding inputs --- */
 function refresh(){
   const chs = allCh();
   players.forEach((p,pi) => {
     const ch = chs[pi];
     const chTxt = ch === null ? "—" : (ch < 0 ? "+" + Math.abs(ch) : String(ch));
-
     const box = document.querySelector(`[data-ch="${p.id}"]`);
     if (box){ box.textContent = chTxt; box.classList.toggle("empty", ch === null); }
     const chCell = document.querySelector(`[data-chcell="${p.id}"]`);
     if (chCell) chCell.textContent = chTxt;
-
     let out=0,inn=0,used=0,strokes=0;
     for (let i=0;i<18;i++){
       const s = strokesOnHole(ch, i);
@@ -885,11 +943,11 @@ function refresh(){
 /* --- events --- */
 document.addEventListener("click", e => {
   const teeBtn = e.target.closest("[data-tee]");
-  if (teeBtn){ tee = teeBtn.dataset.tee; renderTees(); renderCard(); refresh(); return; }
+  if (teeBtn){ tee = teeBtn.dataset.tee; renderTees(); renderCard(); refresh(); pushState(); return; }
   const kill = e.target.closest("[data-kill]");
-  if (kill && players.length > 4){
+  if (kill && players.length > 2){
     players = players.filter(p => p.id !== +kill.dataset.kill);
-    renderRoster(); renderCard(); refresh(); return;
+    renderRoster(); renderCard(); refresh(); pushState(); return;
   }
   const side = e.target.closest("[data-side]");
   if (side){
@@ -897,14 +955,14 @@ document.addEventListener("click", e => {
     p.team = p.team === "A" ? "B" : "A";
     side.dataset.team = p.team; side.textContent = p.team;
     side.setAttribute("aria-label", `Side for ${p.name || "player"}, currently team ${p.team}`);
-    refresh(); return;
+    refresh(); pushState(); return;
   }
   const mode = e.target.closest("[data-mode]");
   if (mode){
     nassau.mode = mode.dataset.mode;
     document.querySelectorAll("#modeSeg button")
       .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === nassau.mode)));
-    renderRoster(); refresh();
+    renderRoster(); refresh(); pushState();
   }
 });
 ["f","b","t"].forEach((k,i) => {
@@ -913,7 +971,7 @@ document.addEventListener("click", e => {
     const v = el.value.replace(/[^\d.]/g,"");
     if (v !== el.value) el.value = v;
     nassau[k] = parseFloat(v) || 0;
-    refresh();
+    refresh(); pushState();
   });
 });
 document.addEventListener("input", e => {
@@ -922,17 +980,17 @@ document.addEventListener("input", e => {
   if (el.classList.contains("name-in") && p){
     p.name = el.value;
     document.querySelectorAll(`.name-in[data-id="${id}"]`).forEach(o => { if (o !== el) o.value = el.value; });
-  } else if (el.classList.contains("email-in") && p){
-    p.email = el.value;
+    pushState();
   } else if (el.classList.contains("hi-in") && p){
-    p.hi = el.value; refresh();
+    p.hi = el.value; refresh(); pushState();
   } else if (el.dataset.hole !== undefined && p){
     const v = el.value.replace(/[^\d]/g,"").slice(0,2);
     if (v !== el.value) el.value = v;
     p.scores[+el.dataset.hole] = v === "" ? null : parseInt(v,10);
-    refresh();
+    refresh(); pushState();
   }
 });
+
 const clearBtn = document.getElementById("clearBtn");
 let armed = false, armTimer;
 function disarm(){ armed = false; clearBtn.textContent = "Clear scores"; clearBtn.classList.remove("btn-warn"); }
@@ -951,26 +1009,39 @@ clearBtn.addEventListener("click", () => {
     return;
   }
   players.forEach(p => p.scores = Array(18).fill(null));
-  renderCard(); refresh();
+  renderCard(); refresh(); pushState();
   armed = false;
   clearBtn.classList.remove("btn-warn");
   clearBtn.textContent = "Scores cleared";
   armTimer = setTimeout(disarm, 2500);
 });
 
-document.getElementById("lowBtn").addEventListener("change", e => { lowMode = e.target.checked; refresh(); });
+document.getElementById("lowBtn").addEventListener("change", e => {
+  lowMode = e.target.checked; refresh(); pushState();
+});
 
 const countSel = document.getElementById("playerCount");
-const initCount = parseInt(countSel.value, 10) || 4;
-for (let i = 0; i < initCount; i++) players.push(blank());
 countSel.addEventListener("change", () => {
   const n = parseInt(countSel.value, 10) || 4;
   while (players.length < n) players.push(blank());
   while (players.length > n) players.pop();
-  renderRoster(); renderCard(); refresh();
+  renderRoster(); renderCard(); refresh(); pushState();
 });
 
-renderTees(); renderRoster(); renderCard(); refresh();
+/* --- Firebase listener: load state on connect and whenever it changes --- */
+onValue(dbRef, snapshot => {
+  if (ignoreRemote) return;
+  const data = snapshot.val();
+  if (data && data.players && data.players.length > 0){
+    applyRemote(data);
+  } else {
+    // first visit — no data yet, initialize with defaults
+    const initCount = parseInt(countSel.value, 10) || 4;
+    while (players.length < initCount) players.push(blank());
+    renderTees(); renderRoster(); renderCard(); refresh();
+    pushState();
+  }
+});
 </script>
 </body>
 </html>
