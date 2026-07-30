@@ -225,15 +225,50 @@
   .rules dd{margin:0}
 
   @media (max-width:720px){
-    body{padding:14px 8px 56px}
-    .sheet{padding:22px 14px 20px;border-radius:10px}
-    .tees{grid-template-columns:repeat(2,1fr)}
-    .rrow{grid-template-columns:18px 1fr 58px 54px 28px;gap:7px 6px;padding:9px 10px}
-    .roster.has-teams .rrow{grid-template-columns:18px 1fr 54px 48px 28px 28px}
-    .ch-out{font-size:16px}
-    .wager-top{gap:12px}
-    .rules dl{grid-template-columns:1fr}
-    .rules dt{text-align:left}
+    body{padding:0 0 64px;background:#F3EDE0}
+    .sheet{padding:16px 12px 24px;border-radius:0;border:0;box-shadow:none;max-width:100%}
+    .masthead{padding-bottom:16px}
+    .crest{width:40px;height:40px;font-size:22px;margin-bottom:10px}
+    h1{font-size:22px}
+    .place{font-size:12px;margin-top:4px}
+    .architects{font-size:12px;margin-top:8px}
+    h2{margin:24px 0 10px;font-size:10px}
+    .tees{grid-template-columns:repeat(2,1fr);gap:8px}
+    .tee{padding:10px 10px 8px}
+    .tee-name{font-size:16px}
+    .tee-yds{font-size:17px}
+    .roster-count{font-size:14px}
+    .roster-count select{font-size:15px;padding:8px 12px}
+    .rrow{grid-template-columns:20px 1fr 60px 44px 32px;gap:6px 5px;padding:8px 10px}
+    .roster.has-teams .rrow{grid-template-columns:20px 1fr 56px 44px 28px 28px}
+    .rhead span{font-size:9px;letter-spacing:.1em}
+    input[type=text]{padding:8px 7px;font-size:15px}
+    .ch-out{font-size:15px;padding:6px 0}
+    .kill{width:32px;height:32px;font-size:17px}
+    .roster-foot{margin-top:10px}
+    .toggle{font-size:14px}
+    .toggle input{width:18px;height:18px}
+    .cardwrap{border-radius:8px}
+    table{min-width:0}
+    thead th{font-size:9px;padding:7px 3px;letter-spacing:.06em}
+    .pname input{font-size:12px;min-width:52px;padding:5px 3px}
+    tbody td,tbody th{font-size:12px;height:30px}
+    .holecol{width:30px;font-size:12px}
+    .yds,.par{width:36px;font-size:11px}
+    .sicol{width:32px;font-size:10px}
+    .sc{min-width:38px}
+    .sc input{font-size:13px;height:30px}
+    .net td{font-size:15px}
+    .wager-top{flex-direction:column;align-items:flex-start;gap:10px}
+    .seg button{font-size:13px;padding:9px 12px}
+    .stakes{gap:7px}
+    .stake input{width:40px;font-size:14px}
+    .ledger td.who{font-size:13px;padding:0 8px}
+    .ledger .settle{font-size:15px}
+    .send{gap:8px}
+    .btn{font-size:14px;padding:10px 16px}
+    .legend{font-size:12px}
+    .card-foot{margin-top:8px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media print{
