@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whitford Country Club — Scorecards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0C3B2A;
+    --ink-deep:#06231A;
+    --stock:#FBF7EF;
+    --stock-2:#F3EDE0;
+    --gold:#B79A5B;
+    --rule:#D9D1BF;
+    --muted:#6E6858;
+    --text:#22201B;
+    --display:"Bodoni Moda",Georgia,serif;
+    --body:"IBM Plex Sans",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100vh}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #FFFDF8 0%, var(--stock) 55%, var(--stock-2) 100%);
+    color:var(--text);
+    font-family:var(--body);
+    font-size:15px;
+    line-height:1.5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 18px;
+  }
+  .sheet{
+    max-width:480px;width:100%;
+    background:var(--stock);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    box-shadow:0 1px 0 #fff inset, 0 18px 44px -30px rgba(6,35,26,.45);
+    padding:36px 32px 32px;
+    text-align:center;
+  }
+  .crest{
+    width:52px;height:52px;margin:0 auto 16px;
+    display:grid;place-items:center;
+    background:var(--gold);border:2px solid #fff;
+    outline:1px solid var(--gold);
+    font-family:var(--display);font-size:30px;font-style:italic;color:#fff;line-height:1;
+    padding-bottom:4px;
+  }
+  h1{
+    font-family:var(--display);font-weight:600;
+    font-size:clamp(22px,5vw,34px);
+    letter-spacing:.06em;text-transform:uppercase;
+    margin:0 0 6px;line-height:1.05;color:var(--ink);
+  }
+  .place{font-family:var(--display);font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:32px}
+  .cards{display:flex;flex-direction:column;gap:12px}
+  .card-link{
+    display:block;
+    background:#fff;border:1px solid var(--rule);border-radius:10px;
+    padding:18px 20px;text-decoration:none;color:var(--text);
+    transition:border-color .15s, box-shadow .15s, transform .15s;
+    text-align:left;
+  }
+  .card-link:hover{
+    border-color:var(--ink);
+    box-shadow:0 6px 20px -12px rgba(6,35,26,.5);
+    transform:translateY(-2px);
+  }
+  .card-link strong{
+    display:block;font-family:var(--display);font-size:18px;font-weight:600;
+    color:var(--ink);margin-bottom:4px;
+  }
+  .card-link span{font-size:13px;color:var(--muted)}
+  .architects{margin-top:28px;font-family:var(--display);font-style:italic;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="crest">W</div>
+  <h1>Whitford Country Club</h1>
+  <div class="place">Exton, Pennsylvania</div>
+  <div class="cards">
+    <a class="card-link" href="whitford.html">
+      <strong>Scorecard</strong>
+      <span>Live scoring, handicaps, and the 5-5-10 wager</span>
+    </a>
+    <a class="card-link" href="whitford-scorecard_marked.html">
+      <strong>Scorecard (annotated)</strong>
+      <span>Same scorecard with stroke annotations marked</span>
+    </a>
+  </div>
+  <div class="architects">Course architects William and David Gordon &middot; Par 72</div>
+</div>
+</body>
+</html>
