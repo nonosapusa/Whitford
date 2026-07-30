@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whitford Country Club — Scorecard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0C3B2A;          /* club green, from the card's header blocks */
+    --ink-deep:#06231A;
+    --stock:#FBF7EF;        /* card stock */
+    --stock-2:#F3EDE0;
+    --gold:#B79A5B;         /* crest gold */
+    --pencil:#B3261E;       /* the red handicap numerals */
+    --rule:#D9D1BF;
+    --rule-soft:#EAE3D5;
+    --text:#22201B;
+    --muted:#6E6858;
+    --display:"Bodoni Moda",Georgia,serif;
+    --body:"IBM Plex Sans",system-ui,sans-serif;
+    --data:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #FFFDF8 0%, var(--stock) 55%, var(--stock-2) 100%);
+    color:var(--text);
+    font-family:var(--body);
+    font-size:15px;
+    line-height:1.5;
+    padding:28px 18px 72px;
+    -webkit-text-size-adjust:100%;
+  }
+  .sheet{
+    max-width:1080px;margin:0 auto;
+    background:var(--stock);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    box-shadow:0 1px 0 #fff inset, 0 18px 44px -30px rgba(6,35,26,.45);
+    padding:34px 30px 30px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{text-align:center;padding-bottom:22px;border-bottom:2px solid var(--ink);position:relative}
+  .crest{
+    width:52px;height:52px;margin:0 auto 14px;
+    display:grid;place-items:center;
+    background:var(--gold);border:2px solid #fff;
+    outline:1px solid var(--gold);
+    font-family:var(--display);font-size:30px;font-style:italic;color:#fff;line-height:1;
+    padding-bottom:4px;
+  }
+  h1{
+    font-family:var(--display);font-weight:600;
+    font-size:clamp(24px,4.6vw,38px);
+    letter-spacing:.06em;text-transform:uppercase;
+    margin:0;line-height:1.05;color:var(--ink);
+  }
+  .place{font-family:var(--display);font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .architects{font-family:var(--display);font-style:italic;font-size:14px;color:var(--muted);margin-top:12px}
+
+  h2{
+    font-family:var(--body);font-size:11px;font-weight:600;
+    letter-spacing:.19em;text-transform:uppercase;color:var(--ink);
+    margin:34px 0 14px;display:flex;align-items:center;gap:12px;
+  }
+  h2::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+  /* ---------- tee markers (signature) ---------- */
+  .tees{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .tee{
+    position:relative;cursor:pointer;text-align:left;
+    background:#fff;border:1px solid var(--rule);border-radius:10px;
+    padding:14px 14px 12px;font:inherit;color:inherit;
+    transition:border-color .16s, box-shadow .16s, transform .16s;
+  }
+  .tee:hover{transform:translateY(-2px)}
+  .tee:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .peg{display:block;width:16px;height:22px;margin-bottom:10px;
+    clip-path:polygon(0 0,100% 0,72% 34%,64% 100%,36% 100%,28% 34%);
+    background:var(--peg);box-shadow:0 0 0 1px rgba(34,32,27,.28)}
+  .tee-name{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:.02em;display:block}
+  .tee-yds{font-family:var(--data);font-size:20px;font-weight:500;color:var(--ink);display:block;margin-top:2px}
+  .tee-meta{font-family:var(--data);font-size:11px;color:var(--muted);display:block;margin-top:6px;letter-spacing:.02em}
+  .tee[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset, 0 10px 24px -18px rgba(6,35,26,.7)}
+  .tee[aria-pressed="true"] .tee-name{color:var(--ink)}
+
+  /* ---------- roster ---------- */
+  .roster{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:#fff}
+  .rrow{display:grid;grid-template-columns:26px 1fr 88px 104px 34px;gap:10px;align-items:center;
+    padding:9px 12px;border-top:1px solid var(--rule-soft)}
+  .rrow:first-child{border-top:0}
+  .rhead{background:var(--ink);color:#EFEADD;border-top:0}
+  .rhead span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+  .rnum{font-family:var(--data);font-size:12px;color:var(--muted)}
+  input[type=text]{
+    width:100%;font:inherit;padding:7px 9px;color:var(--text);
+    background:#FEFDFA;border:1px solid var(--rule);border-radius:6px;
+  }
+  input[type=text]:focus{outline:2px solid var(--ink);outline-offset:1px;border-color:var(--ink)}
+  .hi-in{font-family:var(--data);text-align:center}
+  .ch-out{
+    font-family:var(--data);font-size:19px;font-weight:600;color:var(--ink);
+    text-align:center;background:var(--stock-2);border:1px solid var(--rule);border-radius:6px;padding:5px 0;
+  }
+  .ch-out.empty{color:#B9B2A2;font-weight:400}
+  .kill{
+    width:26px;height:26px;border-radius:50%;border:1px solid var(--rule);background:#fff;
+    color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0;
+  }
+  .kill:hover:not(:disabled){border-color:var(--pencil);color:var(--pencil)}
+  .kill:disabled{opacity:.28;cursor:not-allowed}
+  .roster-foot{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-top:12px}
+  .add{
+    font:inherit;font-weight:500;cursor:pointer;background:var(--ink);color:#F6F2E8;
+    border:0;border-radius:7px;padding:9px 16px;
+  }
+  .add:hover{background:var(--ink-deep)}
+  .add:disabled{opacity:.35;cursor:not-allowed}
+  .toggle{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);cursor:pointer}
+  .toggle input{accent-color:var(--ink);width:16px;height:16px}
+
+  /* ---------- the card ---------- */
+  .cardwrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:#fff}
+  table{border-collapse:collapse;width:100%;min-width:520px}
+  th,td{border-right:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);text-align:center;padding:0}
+  thead th{
+    background:var(--ink);color:#EFEADD;font-size:10px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;padding:9px 6px;border-color:rgba(255,255,255,.16);
+  }
+  thead th.pname{padding:5px}
+  .pname input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff;
+    text-align:center;font-size:13px;min-width:74px;padding:6px 4px}
+  .pname input::placeholder{color:rgba(239,234,221,.55)}
+  .pname input:focus{outline:2px solid var(--gold);background:rgba(255,255,255,.16)}
+  tbody td,tbody th{font-family:var(--data);font-size:14px;height:34px}
+  .holecol{background:var(--ink);color:#F1ECDF;font-weight:600;width:42px;position:sticky;left:0;z-index:2}
+  .yds,.par{color:var(--text);width:56px}
+  .yds{color:#4A4636}
+  .sicol{color:var(--pencil);width:48px;font-size:12px}
+  .band td,.band th{background:var(--ink);color:#F1ECDF;font-weight:600;letter-spacing:.06em}
+  .band .holecol{font-size:11px;letter-spacing:.12em}
+  .scoreline th{
+    background:var(--stock-2);color:var(--ink);font-family:var(--body);font-size:10px;
+    letter-spacing:.13em;text-transform:uppercase;font-weight:600;text-align:right;padding-right:9px;
+    position:sticky;left:0;z-index:2;
+  }
+  .sc{position:relative;padding:0;min-width:60px}
+  .sc input{
+    width:100%;height:34px;border:0;background:transparent;text-align:center;
+    font-family:var(--data);font-size:15px;color:var(--text);padding:0;border-radius:0;
+  }
+  .sc input:focus{outline:2px solid var(--ink);outline-offset:-2px;background:#FFFCEF}
+  .dots{
+    position:absolute;top:2px;right:4px;color:var(--pencil);font-size:9px;
+    letter-spacing:-.5px;pointer-events:none;line-height:1;
+  }
+  .tot td{font-weight:600}
+  .net td{font-family:var(--data);font-size:18px;font-weight:600;color:var(--ink);background:#FFFCEF}
+  .chrow td{font-family:var(--data);font-size:14px;color:var(--pencil)}
+
+  /* ---------- the wager ---------- */
+  .wager-top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+  .seg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:#fff}
+  .seg button{font:inherit;font-size:12.5px;padding:8px 13px;border:0;border-left:1px solid var(--rule);
+    background:#fff;color:var(--muted);cursor:pointer}
+  .seg button:first-child{border-left:0}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#F1ECDF;font-weight:500}
+  .stakes{display:flex;gap:9px}
+  .stake{display:flex;flex-direction:column;gap:4px}
+  .stake label{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .stake .wrap{display:flex;align-items:center;gap:2px;background:#fff;border:1px solid var(--rule);border-radius:6px;padding:0 8px}
+  .stake .wrap:focus-within{outline:2px solid var(--ink);outline-offset:1px;border-color:var(--ink)}
+  .stake .wrap span{font-family:var(--data);font-size:13px;color:var(--muted)}
+  .stake input{width:44px;border:0;background:transparent;text-align:right;
+    font-family:var(--data);font-size:15px;padding:7px 2px}
+  .stake input:focus{outline:none}
+  .ledgerwrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:#fff}
+  table.ledger{min-width:470px}
+  .ledger td.who{text-align:left;padding:0 12px;font-family:var(--body);font-size:14px}
+  .ledger td.who em{font-style:normal;color:var(--muted);font-size:12px}
+  .ledger .settle{background:var(--stock-2);font-size:17px;font-weight:600}
+  .pos{color:var(--ink)} .neg{color:var(--pencil)} .nil{color:var(--muted)}
+  .wager-empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px}
+  .wager-note{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+  .teamchip{font:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;height:26px;
+    border-radius:6px;border:1px solid var(--rule);background:#fff;color:var(--muted);cursor:pointer}
+  .teamchip[data-team="A"]{background:var(--ink);color:#F1ECDF;border-color:var(--ink)}
+  .teamchip[data-team="B"]{background:var(--gold);color:#33290A;border-color:var(--gold)}
+  .roster.has-teams .rrow{grid-template-columns:26px 1fr 88px 104px 34px 34px}
+
+  .send{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
+  .btn{font:inherit;font-size:13.5px;cursor:pointer;border-radius:7px;padding:9px 15px;
+    border:1px solid var(--rule);background:#fff;color:var(--text)}
+  .btn:hover{border-color:var(--ink);color:var(--ink)}
+  .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .btn-primary{background:var(--ink);color:#F6F2E8;border-color:var(--ink)}
+  .btn-primary:hover{background:var(--ink-deep);color:#F6F2E8}
+  .sendmsg{font-size:12.5px;color:var(--ink)}
+  .btn-warn{border-color:var(--pencil);color:var(--pencil);background:#FFF7F6}
+  .btn-warn:hover{border-color:var(--pencil);color:var(--pencil)}
+  .card-foot{display:flex;justify-content:flex-end;margin-top:10px}
+  .email-in{font-size:13px}
+
+  .roster-count{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;color:var(--muted)}
+  .roster-count select{font:inherit;padding:6px 10px;border:1px solid var(--rule);border-radius:6px;
+    background:#fff;color:var(--text);cursor:pointer}
+  .roster-count select:focus{outline:2px solid var(--ink);outline-offset:1px}
+  .legend{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.65}
+  .legend b{color:var(--ink);font-weight:600}
+  .legend code{font-family:var(--data);font-size:12px;background:var(--stock-2);padding:1px 5px;border-radius:4px}
+  .rules{margin-top:26px;padding-top:18px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--muted)}
+  .rules dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:10px 0 0}
+  .rules dt{font-family:var(--body);font-weight:600;color:var(--ink);text-align:right;white-space:nowrap}
+  .rules dd{margin:0}
+
+  @media (max-width:720px){
+    body{padding:14px 8px 56px}
+    .sheet{padding:22px 14px 20px;border-radius:10px}
+    .tees{grid-template-columns:repeat(2,1fr)}
+    .rrow{grid-template-columns:18px 1fr 58px 54px 28px;gap:7px 6px;padding:9px 10px}
+    .roster.has-teams .rrow{grid-template-columns:18px 1fr 54px 48px 28px 28px}
+    .ch-out{font-size:16px}
+    .wager-top{gap:12px}
+    .rules dl{grid-template-columns:1fr}
+    .rules dt{text-align:left}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media print{
+    body{background:#fff;padding:0}
+    .sheet{border:0;box-shadow:none;max-width:none}
+    .roster-foot,.kill,.send,.card-foot,.tee:not([aria-pressed=true]){display:none}
+    .cardwrap{overflow:visible}
+  }
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <header class="masthead">
+    <div class="crest">W</div>
+    <h1>Whitford Country Club</h1>
+    <div class="place">Exton, Pennsylvania</div>
+    <div class="architects">Course architects William and David Gordon &middot; Par 72</div>
+  </header>
+
+  <h2>Choose your tees</h2>
+  <div class="tees" id="tees" role="group" aria-label="Tee selection"></div>
+
+  <h2>The group</h2>
+  <div class="roster-count">
+    <label for="playerCount">How many players?</label>
+    <select id="playerCount">
+      <option value="2">2</option><option value="3">3</option>
+      <option value="4" selected>4</option>
+      <option value="5">5</option><option value="6">6</option>
+      <option value="7">7</option><option value="8">8</option>
+    </select>
+  </div>
+  <div class="roster" id="roster"></div>
+  <div class="roster-foot">
+    <button class="add" id="addBtn" type="button">Add a player</button>
+    <label class="toggle"><input type="checkbox" id="lowBtn"> Play strokes off the low handicap</label>
+  </div>
+
+  <h2>Scorecard</h2>
+  <div class="cardwrap"><table id="card"></table></div>
+  <div class="card-foot">
+    <button class="btn" type="button" id="clearBtn">Clear scores</button>
+  </div>
+
+  <h2>The 5-5-10</h2>
+  <div class="wager-top">
+    <div class="seg" id="modeSeg" role="group" aria-label="Wager format">
+      <button type="button" data-mode="teams" aria-pressed="false">Teams, 2 v 2</button>
+      <button type="button" data-mode="low" aria-pressed="false">Field</button>
+      <button type="button" data-mode="pairs" aria-pressed="true">Every pair</button>
+    </div>
+    <div class="stakes">
+      <div class="stake"><label for="sf">Front nine</label>
+        <div class="wrap"><span>$</span><input type="text" id="sf" inputmode="decimal" value="5"></div></div>
+      <div class="stake"><label for="sb">Back nine</label>
+        <div class="wrap"><span>$</span><input type="text" id="sb" inputmode="decimal" value="5"></div></div>
+      <div class="stake"><label for="st">All 18</label>
+        <div class="wrap"><span>$</span><input type="text" id="st" inputmode="decimal" value="10"></div></div>
+    </div>
+  </div>
+  <div class="ledgerwrap" id="ledgerwrap"></div>
+  <p class="wager-note" id="wagerNote"></p>
+
+  <h2>Send the card</h2>
+  <div class="send">
+    <button class="btn btn-primary" type="button" id="mailBtn">Send the card</button>
+    <div class="seg" id="fmtSeg" role="group" aria-label="Attachment format">
+      <button type="button" data-fmt="pdf" aria-pressed="true">PDF</button>
+      <button type="button" data-fmt="png" aria-pressed="false">Image</button>
+    </div>
+    <span class="sendmsg" id="sendMsg" role="status"></span>
+  </div>
+  <p class="legend" style="margin-top:10px">
+    <b>On a phone</b> this opens the share sheet with the card already made — pick Mail and it arrives
+    attached, nothing to drag. Addresses from the roster get copied to your clipboard at the same time,
+    so paste them into To. <b>On a computer</b> there's no share sheet, so the file lands in your
+    downloads and an addressed draft opens for you to attach it.
+    <b>Image</b> instead of PDF shows up inside the message on an iPhone rather than as a file —
+    easier for everyone to glance at, harder to print.
+</p>
+
+  <p class="legend">
+    <b>Three matches, one round.</b> The front nine, the back nine and the full 18 are settled
+    separately, so a blown front nine costs you $5 and nothing more — the back starts level again.
+    Each nine is played hole by hole on net: win the hole, go one up. The Front, Back and 18 columns
+    show where that match stands in holes, and whoever is up when the nine ends takes the stake.
+    <b>Teams</b> plays better ball, each side counting its lowest net on the hole.
+    <b>Field</b> gives every hole to the outright low net, and the most holes over the nine collects
+    from everyone else. <b>Every pair</b> runs a 5-5-10 between each two players in the group.
+    Ties push, and a match still in progress is marked <span style="font-family:var(--data)">*</span>.
+  </p>
+
+  <p class="legend">
+    <b>Course handicap</b> = handicap index &times; slope &divide; 113 + (course rating &minus; 72), rounded to the
+    nearest stroke. Enter a plus handicap as <code>+2.4</code>.
+    Red dots in a score box are the strokes that player receives on that hole, allotted by the
+    stroke-index column shown for the selected tees. Net score subtracts only the strokes on holes you've
+    actually posted, so a part-finished round still totals correctly.
+  </p>
+</main>
+
+<script>
+const PAR   = [4,3,4,5,3,4,4,4,5, 4,4,5,3,4,4,5,3,4];
+const M_SI  = [15,11,5,1,17,9,7,3,13, 14,12,4,18,8,2,10,16,6];
+const F_SI  = [7,15,3,1,17,9,11,13,5, 8,14,6,16,2,12,10,18,4];
+
+const TEES = {
+  black:{label:"Black", peg:"#1C1C1A", rating:73.3, slope:139, si:M_SI, siLabel:"Hcp",
+    y:[410,193,433,575,135,399,383,405,540, 381,340,500,150,362,407,561,201,393]},
+  blue: {label:"Blue",  peg:"#1B4F8F", rating:72.1, slope:137, si:M_SI, siLabel:"Hcp",
+    y:[377,189,418,562,118,378,370,386,487, 357,336,486,146,358,394,517,178,374]},
+  white:{label:"White", peg:"#F7F5EF", rating:69.8, slope:132, si:M_SI, siLabel:"Hcp",
+    y:[352,180,390,492,115,345,332,360,472, 335,332,444,136,355,342,482,170,368]},
+  green:{label:"Green", peg:"#2E7D32", rating:70.1, slope:122, si:F_SI, siLabel:"F Hcp",
+    y:[295,130,310,440,99,280,257,295,390, 260,260,386,122,295,295,449,125,315]}
+};
+const PAR_TOTAL = 72;
+const sum = a => a.reduce((x,y)=>x+y,0);
+
+let tee = "blue";
+let lowMode = false;
+let seq = 0;
+let players = [];
+let nassau = {mode:"pairs", f:5, b:5, t:10};
+const blank = () => ({id:++seq, name:"", hi:"", email:"",
+  team: Math.floor(players.length/2) % 2 === 0 ? "A" : "B", scores:Array(18).fill(null)});
+
+/* --- handicap math --- */
+function parseHi(raw){
+  const s = String(raw).trim();
+  if (!s) return null;
+  const m = s.match(/^([+-]?)\s*(\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  const n = parseFloat(m[2]);
+  return m[1] === "+" ? -n : n;      // a plus handicap plays to a negative index
+}
+function courseHandicap(hi){
+  const t = TEES[tee];
+  return Math.round(hi * t.slope / 113 + (t.rating - PAR_TOTAL));
+}
+function allCh(){
+  const raw = players.map(p => { const hi = parseHi(p.hi); return hi === null ? null : courseHandicap(hi); });
+  if (!lowMode) return raw;
+  const known = raw.filter(v => v !== null);
+  if (!known.length) return raw;
+  const low = Math.min(...known);
+  return raw.map(v => v === null ? null : v - low);
+}
+function strokesOnHole(ch, i){
+  const si = TEES[tee].si[i];
+  if (ch === null || ch === 0) return 0;
+  if (ch > 0) return Math.floor(ch/18) + (si <= ch % 18 ? 1 : 0);
+  const give = Math.abs(ch);
+  return -(Math.floor(give/18) + (si > 18 - (give % 18) ? 1 : 0));
+}
+
+/* --- the 5-5-10 --- */
+const FRONT = [0,1,2,3,4,5,6,7,8], BACK = [9,10,11,12,13,14,15,16,17];
+const SEGS = [
+  {key:"f", label:"Front nine", holes:FRONT},
+  {key:"b", label:"Back nine",  holes:BACK},
+  {key:"t", label:"All 18",     holes:FRONT.concat(BACK)}
+];
+const nameOf  = (p,i) => p.name.trim() || `Player ${i+1}`;
+
+function computeLedger(chs){
+  const stake = {f:nassau.f, b:nassau.b, t:nassau.t};
+  const part = {f:false, b:false, t:false};
+  const chOf = new Map(players.map((p,i) => [p.id, chs[i]]));
+  const netHole = (p,h) => p.scores[h] - strokesOnHole(chOf.get(p.id), h);
+  const fresh = (label,sub) => ({label, sub, f:{h:0,cash:0}, b:{h:0,cash:0}, t:{h:0,cash:0}});
+  let any = false;
+
+  if (nassau.mode === "teams"){
+    const A = players.filter(p => p.team === "A"), B = players.filter(p => p.team === "B");
+    if (!A.length || !B.length) return {error:"Put at least one player on each side."};
+    const names = t => t.map(p => nameOf(p, players.indexOf(p))).join(", ");
+    const best = (t,h) => Math.min(...t.filter(p => p.scores[h] !== null).map(p => netHole(p,h)));
+    const rows = [fresh("Team A", names(A)), fresh("Team B", names(B))];
+    for (const seg of SEGS){
+      const holes = seg.holes.filter(h => A.some(p=>p.scores[h]!==null) && B.some(p=>p.scores[h]!==null));
+      if (!holes.length) continue;
+      any = true;
+      if (holes.length < seg.holes.length) part[seg.key] = true;
+      let m = 0;
+      for (const h of holes){ const a = best(A,h), b = best(B,h); if (a < b) m++; else if (b < a) m--; }
+      const cash = m > 0 ? stake[seg.key] : m < 0 ? -stake[seg.key] : 0;
+      rows[0][seg.key] = {h:m, cash};
+      rows[1][seg.key] = {h:-m, cash:-cash};
+    }
+    return {rows, part, any,
+      note:"Better ball — each side counts its lowest net on every hole. Whoever is up after the nine takes it."};
+  }
+
+  const rows = players.map((p,i) => fresh(nameOf(p,i), ""));
+
+  if (nassau.mode === "pairs"){
+    for (const seg of SEGS)
+      for (let i=0;i<players.length;i++)
+        for (let j=i+1;j<players.length;j++){
+          const holes = seg.holes.filter(h => players[i].scores[h] !== null && players[j].scores[h] !== null);
+          if (!holes.length) continue;
+          any = true;
+          if (holes.length < seg.holes.length) part[seg.key] = true;
+          let m = 0;
+          for (const h of holes){
+            const a = netHole(players[i],h), b = netHole(players[j],h);
+            if (a < b) m++; else if (b < a) m--;
+          }
+          rows[i][seg.key].h += m; rows[j][seg.key].h -= m;
+          if (m === 0) continue;
+          const w = m > 0 ? i : j, l = m > 0 ? j : i;
+          rows[w][seg.key].cash += stake[seg.key];
+          rows[l][seg.key].cash -= stake[seg.key];
+        }
+    return {rows, part, any,
+      note:`Each player carries a separate 5-5-10 against each of the other ${players.length-1}. The holes column adds up every one of those matches, so it can run past nine.`};
+  }
+
+  for (const seg of SEGS){
+    const holes = seg.holes.filter(h => players.every(p => p.scores[h] !== null));
+    if (!holes.length) continue;
+    any = true;
+    if (holes.length < seg.holes.length) part[seg.key] = true;
+    const tally = players.map(() => 0);
+    for (const h of holes){
+      const nets = players.map(p => netHole(p,h));
+      const low = Math.min(...nets);
+      if (nets.filter(n => n === low).length !== 1) continue;
+      const w = nets.indexOf(low);
+      for (let i=0;i<players.length;i++) tally[i] += (i === w ? 1 : -1);
+    }
+    rows.forEach((r,i) => r[seg.key].h = tally[i]);
+    const top = Math.max(...tally);
+    if (tally.filter(v => v === top).length === 1){
+      const w = tally.indexOf(top);
+      rows.forEach((r,i) => r[seg.key].cash = i === w ? stake[seg.key]*(players.length-1) : -stake[seg.key]);
+    }
+  }
+  return {rows, part, any,
+    note:"Every hole goes to the outright low net. Most holes won over the nine collects the stake from everyone else — ties push."};
+}
+
+const cash = n => (n > 0 ? "+$" : n < 0 ? "−$" : "$") + Math.abs(Math.round(n*100)/100);
+const holeTxt = v => v.h === 0 ? "AS" : Math.abs(v.h) + (v.h > 0 ? " up" : " dn");
+const holeCell = (seg,flag) =>
+  `<td class="${seg.h>0?"pos":seg.h<0?"neg":"nil"}">${holeTxt(seg)}${flag?"*":""}</td>`;
+
+/* --- the card as a drawing, rendered to either PDF or PNG --- */
+const CARD_W = 792, CARD_H = 612;
+const CC = {ink:[0.047,0.231,0.165], red:[0.702,0.149,0.118], shade:[0.957,0.937,0.890],
+            rule:[0.85,0.82,0.75], grey:[0.42,0.40,0.34], gold:[0.718,0.604,0.357],
+            black:[0,0,0], white:[1,1,1]};
+
+function cardOps(){
+  const t = TEES[tee], chs = allCh();
+  const bg=[], ln=[], tx=[];
+  const rect=(x,y,w,h,color)=>bg.push({t:"rect",x,y,w,h,color});
+  const line=(x1,y1,x2,y2,w,color)=>ln.push({t:"line",x1,y1,x2,y2,w,color});
+  const text=(s,x,y,font,size,color,align)=>tx.push({t:"text",s:String(s),x,y,font,size,color,align:align||"left"});
+
+  const labelW=80, cW=24, sumW=32, totW=34, chW=30, netW=34;
+  const tableW = labelW + 18*cW + 2*sumW + totW + chW + netW;
+  const x0 = (CARD_W - tableW)/2;
+  const cols=[]; let cx=x0;
+  const addCol=(w,label,key)=>{cols.push({x:cx,w,label,key}); cx+=w;};
+  addCol(labelW,"HOLE","label");
+  for(let i=0;i<9;i++) addCol(cW,String(i+1),i);
+  addCol(sumW,"OUT","out");
+  for(let i=9;i<18;i++) addCol(cW,String(i+1),i);
+  addCol(sumW,"IN","in");
+  addCol(totW,"TOT","tot"); addCol(chW,"HCP","ch"); addCol(netW,"NET","net");
+  const K = k => cols.find(c => c.key === k);
+  const mid = c => c.x + c.w/2;
+
+  text("WHITFORD COUNTRY CLUB", x0, 64, "sansB", 17, CC.ink);
+  text("Exton, Pennsylvania", x0, 79, "sans", 9.5, CC.grey);
+  line(x0, 88, x0+tableW, 88, 1.2, CC.ink);
+  const teeLine = `${t.label.toUpperCase()} TEES`;
+  text(teeLine, x0, 108, "monoB", 11, CC.ink);
+  text(`${sum(t.y).toLocaleString()} yards   rating ${t.rating.toFixed(1)}   slope ${t.slope}   par 72`,
+       x0 + teeLine.length*11*0.6 + 14, 108, "mono", 10, CC.grey);
+  text(new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}),
+       x0+tableW, 108, "mono", 10, CC.grey, "right");
+
+  const rows=[{h:22,kind:"head"},{h:19},{h:19},{h:19}];
+  players.forEach((p,i)=>rows.push({h:26,kind:"player",p,i}));
+  let y=132; rows.forEach(r=>{ r.y0=y; y+=r.h; r.y1=y; });
+  const head=rows[0], top=132, bot=y;
+  const base=(r,sz)=>r.y1-(r.h-sz*0.72)/2;
+
+  rect(x0, head.y0, tableW, head.h, CC.ink);
+  ["out","in","tot","ch","net"].forEach(k=>{const c=K(k); rect(c.x, head.y1, c.w, bot-head.y1, CC.shade);});
+  cols.forEach(c => text(c.label, mid(c), base(head,10), "monoB", 10, CC.white, "center"));
+
+  const dataRow=(r,label,vals,font,size,color,sums)=>{
+    text(label, x0+8, base(r,size), "mono", size-0.5, CC.grey);
+    for(let i=0;i<18;i++) text(vals[i], mid(K(i)), base(r,size), font, size, color, "center");
+    if (sums) ["out","in","tot"].forEach((k,j)=>text(sums[j], mid(K(k)), base(r,size), "monoB", size, color, "center"));
+  };
+  dataRow(rows[1],"YARDS", t.y.map(String), "mono", 9, CC.grey,
+    [sum(t.y.slice(0,9)), sum(t.y.slice(9)), sum(t.y)].map(String));
+  dataRow(rows[2],"PAR", PAR.map(String), "monoB", 10, CC.black, ["36","36","72"]);
+  dataRow(rows[3], t.siLabel.toUpperCase(), t.si.map(String), "mono", 9, CC.red, null);
+
+  rows.filter(r=>r.kind==="player").forEach(r=>{
+    const p=r.p, ch=chs[r.i];
+    text(nameOf(p,r.i).slice(0,12), x0+8, base(r,11), "sans", 11, CC.black);
+    let out=0, inn=0, used=0, st=0;
+    for(let i=0;i<18;i++){
+      const c=K(i), s=p.scores[i], g=strokesOnHole(ch,i);
+      if (g>0) text(g<=2?".".repeat(g):"."+g, c.x+c.w-4, r.y0+8, "mono", 6, CC.red, "right");
+      if (s!==null){
+        used++; st+=g; (i<9?out+=s:inn+=s);
+        const par=PAR[i];
+        if(s<par){
+          bg.push({t:"circle",x:mid(c),y:r.y0+r.h/2,r:9,color:CC.black});
+        }else if(s===par+1){
+          bg.push({t:"square",x:c.x+c.w/2-9,y:r.y0+r.h/2-9,size:18,double:false,color:CC.black});
+        }else if(s>=par+2){
+          bg.push({t:"square",x:c.x+c.w/2-9,y:r.y0+r.h/2-9,size:18,double:true,color:CC.black});
+        }
+        text(s, mid(c), base(r,12), "mono", 12, CC.black, "center");
+      }
+    }
+    const cell=(k,v,f,sz,col)=>text(v, mid(K(k)), base(r,sz), f, sz, col, "center");
+    cell("out", out||"-", "monoB", 11, CC.black);
+    cell("in",  inn||"-", "monoB", 11, CC.black);
+    cell("tot", used?out+inn:"-", "monoB", 11, CC.black);
+    cell("ch",  ch===null?"-":(ch<0?"+"+Math.abs(ch):ch), "mono", 10, CC.red);
+    cell("net", used?(out+inn-st)+(used<18?"*":""):"-", "monoB", 12, CC.ink);
+  });
+
+  cols.forEach(c => line(c.x, top, c.x, bot, 0.5, CC.rule));
+  rows.forEach(r => line(x0, r.y1, x0+tableW, r.y1, 0.5, CC.rule));
+  line(x0, head.y1, x0+tableW, head.y1, 1, CC.ink);
+  [[x0,top,x0+tableW,top],[x0,bot,x0+tableW,bot],[x0,top,x0,bot],[x0+tableW,top,x0+tableW,bot]]
+    .forEach(l => line(l[0],l[1],l[2],l[3],1,CC.ink));
+  text("Course architects William and David Gordon", x0, bot+22, "sans", 8.5, CC.gold);
+
+  return bg.concat(ln, tx);
+}
+
+const PDF_FONT = {mono:"/F1", monoB:"/F2", sans:"/F3", sansB:"/F4"};
+function pdfBlob(){
+  const ASCII = s => String(s).replace(/[·•]/g,"-").replace(/[—–−]/g,"-")
+    .replace(/[’‘]/g,"'").replace(/[“”]/g,'"').replace(/[^\x20-\x7E]/g,"");
+  const esc = s => ASCII(s).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+  const N = n => n.toFixed(2);
+  const rgb = c => c.map(v => v.toFixed(3)).join(" ");
+  const parts = cardOps().map(o => {
+    if (o.t === "rect") return `${rgb(o.color)} rg ${N(o.x)} ${N(CARD_H-o.y-o.h)} ${N(o.w)} ${N(o.h)} re f`;
+    if (o.t === "circle") return `${rgb(o.color)} RG 1 w ${N(o.x)} ${N(CARD_H-o.y)} ${N(o.r)} 0 360 arc S`;
+    if (o.t === "square"){const y=CARD_H-o.y-o.size;let s=`${rgb(o.color)} RG 1 w ${N(o.x)} ${N(y)} ${N(o.size)} ${N(o.size)} re S`; if(o.double){s+=` ${N(o.x-2)} ${N(y-2)} ${N(o.size+4)} ${N(o.size+4)} re S`;} return s;}
+    if (o.t === "line") return `${rgb(o.color)} RG ${o.w} w ${N(o.x1)} ${N(CARD_H-o.y1)} m ${N(o.x2)} ${N(CARD_H-o.y2)} l S`;
+    const w = ASCII(o.s).length * o.size * 0.6;
+    const x = o.align === "center" ? o.x - w/2 : o.align === "right" ? o.x - w : o.x;
+    return `${rgb(o.color)} rg BT ${PDF_FONT[o.font]} ${o.size} Tf ${N(x)} ${N(CARD_H-o.y)} Td (${esc(o.s)}) Tj ET`;
+  });
+  const content = parts.join("\n");
+
+  const objs=[];
+  objs[1]="<</Type/Catalog/Pages 2 0 R>>";
+  objs[2]="<</Type/Pages/Kids[3 0 R]/Count 1>>";
+  objs[3]=`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${CARD_W} ${CARD_H}]/Resources<</Font<</F1 5 0 R/F2 6 0 R/F3 7 0 R/F4 8 0 R>>>>/Contents 4 0 R>>`;
+  objs[4]=`<</Length ${content.length}>>\nstream\n${content}\nendstream`;
+  objs[5]="<</Type/Font/Subtype/Type1/BaseFont/Courier>>";
+  objs[6]="<</Type/Font/Subtype/Type1/BaseFont/Courier-Bold>>";
+  objs[7]="<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>";
+  objs[8]="<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold>>";
+
+  let pdf="%PDF-1.4\n"; const off=[];
+  for(let i=1;i<objs.length;i++){ off[i]=pdf.length; pdf += `${i} 0 obj\n${objs[i]}\nendobj\n`; }
+  const xref=pdf.length;
+  pdf += `xref\n0 ${objs.length}\n0000000000 65535 f \n`;
+  for(let i=1;i<objs.length;i++) pdf += String(off[i]).padStart(10,"0")+" 00000 n \n";
+  pdf += `trailer\n<</Size ${objs.length}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`;
+
+  const bytes = new Uint8Array(pdf.length);
+  for (let i=0;i<pdf.length;i++) bytes[i] = pdf.charCodeAt(i) & 0xFF;
+  return new Blob([bytes], {type:"application/pdf"});
+}
+
+const CANVAS_FONT = {mono:'"Courier New",Courier,monospace', monoB:'bold "Courier New",Courier,monospace',
+                     sans:'Helvetica,Arial,sans-serif', sansB:'bold Helvetica,Arial,sans-serif'};
+function pngBlob(scale){
+  scale = scale || 2;
+  const cv = document.createElement("canvas");
+  cv.width = CARD_W*scale; cv.height = CARD_H*scale;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#ffffff"; g.fillRect(0,0,cv.width,cv.height);
+  g.scale(scale,scale);
+  const col = c => `rgb(${c.map(v => Math.round(v*255)).join(",")})`;
+  for (const o of cardOps()){
+    if (o.t === "rect"){ g.fillStyle = col(o.color); g.fillRect(o.x,o.y,o.w,o.h); }
+    else if (o.t === "circle"){g.strokeStyle=col(o.color);g.lineWidth=1;g.beginPath();g.arc(o.x,o.y,o.r,0,Math.PI*2);g.stroke();}
+    else if (o.t === "square"){g.strokeStyle=col(o.color);g.lineWidth=1;g.strokeRect(o.x,o.y,o.size,o.size);if(o.double)g.strokeRect(o.x-2,o.y-2,o.size+4,o.size+4);}
+    else if (o.t === "line"){
+      g.strokeStyle = col(o.color); g.lineWidth = o.w;
+      g.beginPath(); g.moveTo(o.x1,o.y1); g.lineTo(o.x2,o.y2); g.stroke();
+    } else {
+      g.fillStyle = col(o.color); g.font = `${o.size}px ${CANVAS_FONT[o.font]}`;
+      g.textAlign = o.align; g.fillText(o.s, o.x, o.y);
+    }
+  }
+  return new Promise(res => cv.toBlob(res, "image/png"));
+}
+
+let msgTimer;
+function flash(text){
+  const el = document.getElementById("sendMsg");
+  el.textContent = text;
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { el.textContent = ""; }, 5000);
+}
+
+let shareFmt = "pdf";
+
+async function sendCard(){
+  const stamp = new Date().toISOString().slice(0,10);
+  const png = shareFmt === "png";
+  const filename = `Whitford-scorecard-${stamp}.${png ? "png" : "pdf"}`;
+  const blob = png ? await pngBlob() : pdfBlob();
+  const to = players.map(p => p.email.trim()).filter(Boolean);
+
+  // iPhone and Android: the share sheet hands Mail the file already attached
+  if (navigator.canShare && typeof File === "function"){
+    const file = new File([blob], filename, {type: blob.type});
+    if (navigator.canShare({files:[file]})){
+      let pasted = false;
+      if (to.length){
+        try { await navigator.clipboard.writeText(to.join(", ")); pasted = true; } catch (e) {}
+      }
+      try {
+        await navigator.share({files:[file], title:`Whitford CC - ${new Date().toLocaleDateString()}`});
+        flash(pasted ? "Pick Mail, then paste the addresses into To." : "Pick Mail from the share sheet.");
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+      }
+    }
+  }
+
+  // desktop: save the file, open an addressed draft, attach it yourself
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 20000);
+
+  const subject = encodeURIComponent(`Whitford CC - ${new Date().toLocaleDateString()}`);
+  const body = encodeURIComponent("Today's card is attached.");
+  setTimeout(() => { window.location.href = `mailto:${to.map(encodeURIComponent).join(",")}?subject=${subject}&body=${body}`; }, 500);
+  flash(to.length ? "Saved to your downloads - attach it to the draft."
+                  : "Saved to your downloads. No addresses in the roster.");
+}
+
+document.getElementById("mailBtn").addEventListener("click", () => {
+  sendCard().catch(() => flash("That didn't go through - try again."));
+});
+document.getElementById("fmtSeg").addEventListener("click", e => {
+  const b = e.target.closest("[data-fmt]");
+  if (!b) return;
+  shareFmt = b.dataset.fmt;
+  document.querySelectorAll("#fmtSeg button")
+    .forEach(x => x.setAttribute("aria-pressed", String(x.dataset.fmt === shareFmt)));
+});
+function renderLedger(chs){
+  const wrap = document.getElementById("ledgerwrap"), note = document.getElementById("wagerNote");
+  const r = computeLedger(chs);
+  if (r.error || !r.any){
+    wrap.innerHTML = `<p class="wager-empty">${r.error || "Post a few holes and the money starts moving."}</p>`;
+    note.textContent = ""; return;
+  }
+  wrap.innerHTML = `<table class="ledger"><thead><tr>
+      <th style="text-align:left;padding-left:12px">${nassau.mode==="teams"?"Side":"Player"}</th>
+      <th>Front nine</th><th>Back nine</th><th>All 18</th><th>Settle</th>
+    </tr></thead><tbody>${r.rows.map(row => {
+      const tot = row.f.cash + row.b.cash + row.t.cash;
+      return `<tr>
+        <td class="who">${escapeAttr(row.label)}${row.sub?` <em>— ${escapeAttr(row.sub)}</em>`:""}</td>
+        ${holeCell(row.f, r.part.f)}${holeCell(row.b, r.part.b)}${holeCell(row.t, r.part.t)}
+        <td class="settle ${tot>0?"pos":tot<0?"neg":"nil"}">${tot===0?"—":cash(tot)}</td>
+      </tr>`;
+    }).join("")}</tbody></table>`;
+  note.textContent = r.note;
+}
+
+/* --- tee markers --- */
+function renderTees(){
+  document.getElementById("tees").innerHTML = Object.entries(TEES).map(([key,t]) => `
+    <button class="tee" type="button" data-tee="${key}" aria-pressed="${key===tee}" style="--peg:${t.peg}">
+      <span class="peg"></span>
+      <span class="tee-name">${t.label}</span>
+      <span class="tee-yds">${sum(t.y).toLocaleString()}</span>
+      <span class="tee-meta">${t.rating.toFixed(1)} / ${t.slope}</span>
+    </button>`).join("");
+}
+
+/* --- roster --- */
+function renderRoster(){
+  const el = document.getElementById("roster");
+  const teams = nassau.mode === "teams";
+  el.classList.toggle("has-teams", teams);
+  el.innerHTML = `<div class="rrow rhead"><span></span><span>Player</span><span>Index</span>
+      <span class="chlabel">Course hcp</span>${teams?"<span>Side</span>":""}<span></span></div>` +
+    players.map((p,i) => `
+      <div class="rrow" data-row="${p.id}">
+        <span class="rnum">${i+1}</span>
+        <input type="text" class="name-in" data-id="${p.id}" value="${escapeAttr(p.name)}"
+               placeholder="Name" autocomplete="off" aria-label="Player ${i+1} name">
+        <input type="text" class="hi-in" data-id="${p.id}" value="${escapeAttr(p.hi)}"
+               placeholder="—" inputmode="decimal" autocomplete="off" aria-label="Player ${i+1} handicap index">
+        <div class="ch-out" data-ch="${p.id}">—</div>
+        ${teams?`<button class="teamchip" type="button" data-side="${p.id}" data-team="${p.team}"
+                 aria-label="Side for player ${i+1}, currently team ${p.team}">${p.team}</button>`:""}
+        <button class="kill" type="button" data-kill="${p.id}" ${players.length<=4?"disabled":""}
+                title="${players.length<=4?"Four players minimum":"Remove player"}"
+                aria-label="Remove player ${i+1}">&times;</button>
+      </div>`).join("");
+  document.getElementById("addBtn").disabled = players.length >= 8;
+}
+const escapeAttr = s => String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+
+/* --- scorecard --- */
+function renderCard(){
+  const t = TEES[tee];
+  const cols = players.length;
+  const head = `<thead><tr>
+      <th>Hole</th><th>${t.label}</th><th>Par</th><th>${t.siLabel}</th>
+      ${players.map((p,i)=>`<th class="pname"><input type="text" class="name-in" data-id="${p.id}"
+        value="${escapeAttr(p.name)}" placeholder="Player ${i+1}" autocomplete="off"
+        aria-label="Player ${i+1} name"></th>`).join("")}
+    </tr></thead>`;
+
+  const hole = i => `<tr>
+      <td class="holecol">${i+1}</td>
+      <td class="yds">${t.y[i]}</td>
+      <td class="par">${PAR[i]}</td>
+      <td class="sicol">${t.si[i]}</td>
+      ${players.map(p=>`<td class="sc"><span class="dots" data-dot="${p.id}-${i}"></span>
+        <input type="text" inputmode="numeric" data-id="${p.id}" data-hole="${i}"
+          value="${p.scores[i] ?? ""}" aria-label="Hole ${i+1}, player ${p.name || "unnamed"}"></td>`).join("")}
+    </tr>`;
+
+  const band = (label,key,yds) => `<tr class="band ${key==='tot'?'tot':''}">
+      <td class="holecol">${label}</td><td>${yds}</td><td>36</td><td></td>
+      ${players.map(p=>`<td data-band="${key}-${p.id}"></td>`).join("")}
+    </tr>`;
+
+  const totBand = `<tr class="band tot">
+      <td class="holecol">Tot</td><td>${sum(t.y)}</td><td>72</td><td></td>
+      ${players.map(p=>`<td data-band="tot-${p.id}"></td>`).join("")}
+    </tr>`;
+
+  const footRow = (cls,label,attr) => `<tr class="scoreline ${cls}">
+      <th colspan="4">${label}</th>
+      ${players.map(p=>`<td data-${attr}="${p.id}">—</td>`).join("")}
+    </tr>`;
+
+  document.getElementById("card").innerHTML = head + "<tbody>" +
+    [0,1,2,3,4,5,6,7,8].map(hole).join("") +
+    band("Out","out",sum(t.y.slice(0,9))) +
+    [9,10,11,12,13,14,15,16,17].map(hole).join("") +
+    band("In","in",sum(t.y.slice(9))) +
+    totBand +
+    footRow("chrow","Course handicap","chcell") +
+    footRow("net","Net score","net") +
+    "</tbody>";
+}
+
+/* --- patch every computed number without rebuilding inputs --- */
+function refresh(){
+  const chs = allCh();
+  players.forEach((p,pi) => {
+    const ch = chs[pi];
+    const chTxt = ch === null ? "—" : (ch < 0 ? "+" + Math.abs(ch) : String(ch));
+
+    const box = document.querySelector(`[data-ch="${p.id}"]`);
+    if (box){ box.textContent = chTxt; box.classList.toggle("empty", ch === null); }
+    const chCell = document.querySelector(`[data-chcell="${p.id}"]`);
+    if (chCell) chCell.textContent = chTxt;
+
+    let out=0,inn=0,used=0,strokes=0;
+    for (let i=0;i<18;i++){
+      const s = strokesOnHole(ch, i);
+      const dot = document.querySelector(`[data-dot="${p.id}-${i}"]`);
+      if (dot) dot.textContent = s > 0 ? (s <= 2 ? "•".repeat(s) : "•"+s) : (s < 0 ? "−" : "");
+      const g = p.scores[i];
+      if (g !== null){ used++; strokes += s; (i < 9 ? out += g : inn += g); }
+    }
+    const set = (k,v) => { const c = document.querySelector(`[data-band="${k}-${p.id}"]`); if (c) c.textContent = v; };
+    const gross = out + inn;
+    set("out", out || ""); set("in", inn || ""); set("tot", gross || "");
+    const net = document.querySelector(`[data-net="${p.id}"]`);
+    if (net) net.textContent = used ? (gross - strokes) + (used < 18 ? "*" : "") : "—";
+  });
+  renderLedger(chs);
+}
+
+/* --- events --- */
+document.addEventListener("click", e => {
+  const teeBtn = e.target.closest("[data-tee]");
+  if (teeBtn){ tee = teeBtn.dataset.tee; renderTees(); renderCard(); refresh(); return; }
+  const kill = e.target.closest("[data-kill]");
+  if (kill && players.length > 4){
+    players = players.filter(p => p.id !== +kill.dataset.kill);
+    renderRoster(); renderCard(); refresh(); return;
+  }
+  if (e.target.id === "addBtn" && players.length < 8){
+    players.push(blank()); renderRoster(); renderCard(); refresh(); return;
+  }
+  const side = e.target.closest("[data-side]");
+  if (side){
+    const p = players.find(x => x.id === +side.dataset.side);
+    p.team = p.team === "A" ? "B" : "A";
+    side.dataset.team = p.team; side.textContent = p.team;
+    side.setAttribute("aria-label", `Side for ${p.name || "player"}, currently team ${p.team}`);
+    refresh(); return;
+  }
+  const mode = e.target.closest("[data-mode]");
+  if (mode){
+    nassau.mode = mode.dataset.mode;
+    document.querySelectorAll("#modeSeg button")
+      .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === nassau.mode)));
+    renderRoster(); refresh();
+  }
+});
+["f","b","t"].forEach((k,i) => {
+  const el = document.getElementById(["sf","sb","st"][i]);
+  el.addEventListener("input", () => {
+    const v = el.value.replace(/[^\d.]/g,"");
+    if (v !== el.value) el.value = v;
+    nassau[k] = parseFloat(v) || 0;
+    refresh();
+  });
+});
+document.addEventListener("input", e => {
+  const el = e.target, id = +el.dataset.id;
+  const p = players.find(x => x.id === id);
+  if (el.classList.contains("name-in") && p){
+    p.name = el.value;
+    document.querySelectorAll(`.name-in[data-id="${id}"]`).forEach(o => { if (o !== el) o.value = el.value; });
+  } else if (el.classList.contains("email-in") && p){
+    p.email = el.value;
+  } else if (el.classList.contains("hi-in") && p){
+    p.hi = el.value; refresh();
+  } else if (el.dataset.hole !== undefined && p){
+    const v = el.value.replace(/[^\d]/g,"").slice(0,2);
+    if (v !== el.value) el.value = v;
+    p.scores[+el.dataset.hole] = v === "" ? null : parseInt(v,10);
+    refresh();
+  }
+});
+const clearBtn = document.getElementById("clearBtn");
+let armed = false, armTimer;
+function disarm(){ armed = false; clearBtn.textContent = "Clear scores"; clearBtn.classList.remove("btn-warn"); }
+clearBtn.addEventListener("click", () => {
+  clearTimeout(armTimer);
+  if (!players.some(p => p.scores.some(v => v !== null))){
+    clearBtn.textContent = "Nothing to clear";
+    armTimer = setTimeout(disarm, 2000);
+    return;
+  }
+  if (!armed){
+    armed = true;
+    clearBtn.textContent = "Tap again to clear";
+    clearBtn.classList.add("btn-warn");
+    armTimer = setTimeout(disarm, 5000);
+    return;
+  }
+  players.forEach(p => p.scores = Array(18).fill(null));
+  renderCard(); refresh();
+  armed = false;
+  clearBtn.classList.remove("btn-warn");
+  clearBtn.textContent = "Scores cleared";
+  armTimer = setTimeout(disarm, 2500);
+});
+
+document.getElementById("lowBtn").addEventListener("change", e => { lowMode = e.target.checked; refresh(); });
+
+const countSel = document.getElementById("playerCount");
+const initCount = parseInt(countSel.value, 10) || 4;
+for (let i = 0; i < initCount; i++) players.push(blank());
+countSel.addEventListener("change", () => {
+  const n = parseInt(countSel.value, 10) || 4;
+  while (players.length < n) players.push(blank());
+  while (players.length > n) players.pop();
+  renderRoster(); renderCard(); refresh();
+});
+
+renderTees(); renderRoster(); renderCard(); refresh();
+</script>
+</body>
+</html>
