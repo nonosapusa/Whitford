@@ -391,23 +391,22 @@ const SESSION = "round1";
 const dbRef   = ref(db, SESSION);
 
 const PAR   = [4,3,4,5,3,4,4,4,5, 4,4,5,3,4,4,5,3,4];
-const M_SI  = [15,11,5,1,17,9,7,3,13, 14,12,4,18,8,2,10,16,6];
-const F_SI  = [7,15,3,1,17,9,11,13,5, 8,14,6,16,2,12,10,18,4];
+const M_SI  = [11,13,5,1,17,9,7,3,15, 4,18,12,14,2,6,10,16,8];
 
 const TEES = {
-  black:{label:"Black", peg:"#1C1C1A", rating:73.3, slope:139, si:M_SI, siLabel:"Hcp",
-    y:[410,193,433,575,135,399,383,405,540, 381,340,500,150,362,407,561,201,393]},
-  blue: {label:"Blue",  peg:"#1B4F8F", rating:72.1, slope:137, si:M_SI, siLabel:"Hcp",
-    y:[377,189,418,562,118,378,370,386,487, 357,336,486,146,358,394,517,178,374]},
-  white:{label:"White", peg:"#F7F5EF", rating:69.8, slope:132, si:M_SI, siLabel:"Hcp",
-    y:[352,180,390,492,115,345,332,360,472, 335,332,444,136,355,342,482,170,368]},
-  green:{label:"Green", peg:"#2E7D32", rating:70.1, slope:122, si:F_SI, siLabel:"F Hcp",
-    y:[295,130,310,440,99,280,257,295,390, 260,260,386,122,295,295,449,125,315]}
+  wheat:      {label:"Wheat",       peg:"#F5DEB3", rating:73.3, slope:141, si:M_SI, siLabel:"Hcp",
+    y:[410,193,465,575,135,399,383,415,540, 404,340,500,150,362,450,561,201,410]},
+  wheatnavy:  {label:"Wheat/Navy",  peg:"#8B7355", rating:72.5, slope:140, si:M_SI, siLabel:"Hcp",
+    y:[410,189,427,575,118,399,370,396,540, 404,336,500,150,358,394,517,178,410]},
+  navy:       {label:"Navy",        peg:"#1B2F5E", rating:71.4, slope:138, si:M_SI, siLabel:"Hcp",
+    y:[377,189,427,562,118,378,370,396,497, 377,336,486,146,358,394,517,178,385]},
+  navywhite:  {label:"Navy/White",  peg:"#5B6F9E", rating:70.2, slope:137, si:M_SI, siLabel:"Hcp",
+    y:[377,180,390,492,118,378,370,364,497, 335,336,486,146,358,342,517,170,368]}
 };
 const PAR_TOTAL = 72;
 const sum = a => a.reduce((x,y)=>x+y,0);
 
-let tee = "blue";
+let tee = "navy";
 let lowMode = false;
 let seq = 0;
 let players = [];
@@ -448,7 +447,7 @@ function setSyncStatus(s){
 
 function applyRemote(data){
   if (!data) return;
-  tee      = data.tee      || "blue";
+  tee      = data.tee      || "navy";
   lowMode  = data.lowMode  || false;
   nassau   = data.nassau   || {mode:"pairs", f:5, b:5, t:10};
   seq = 0;
