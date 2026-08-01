@@ -134,10 +134,8 @@
     text-transform:uppercase;padding:9px 6px;border-color:rgba(255,255,255,.16);
   }
   thead th.pname{padding:5px}
-  .pname input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff;
-    text-align:center;font-size:13px;min-width:74px;padding:6px 4px}
-  .pname input::placeholder{color:rgba(239,234,221,.55)}
-  .pname input:focus{outline:2px solid var(--gold);background:rgba(255,255,255,.16)}
+  .pname-txt{display:block;color:#fff;font-size:13px;text-align:center;padding:4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
   tbody td,tbody th{font-family:var(--data);font-size:14px;height:34px}
   .holecol{background:var(--ink);color:#F1ECDF;font-weight:600;width:42px;position:sticky;left:0;z-index:2}
   .yds,.par{color:var(--text);width:56px}
@@ -161,6 +159,8 @@
   .sc.score-birdie::after{display:block;border:2px solid #B3261E;border-radius:50%}
   .sc.score-bogey::after{display:block;border:2px solid #000}
   .sc.score-double::after{display:block;border:4px double #000}
+  .sc.hole-win{background:#E8F5E9}
+  .sc.hole-win input{color:var(--ink);font-weight:600}
   .sc input{position:relative;z-index:1}
   .dots{
     position:absolute;top:2px;right:4px;color:var(--pencil);font-size:9px;
@@ -213,7 +213,10 @@
   .card-foot{display:flex;justify-content:flex-end;margin-top:10px}
   .email-in{font-size:13px}
 
-  .roster-count{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;color:var(--muted)}
+  .rrow[draggable="true"]{cursor:grab}
+  .rrow[draggable="true"]:active{cursor:grabbing}
+  .rrow.drag-over{outline:2px dashed var(--ink);outline-offset:-2px;background:#F0F7F4}
+  .rrow.dragging{opacity:.35}
   .roster-count select{font:inherit;padding:6px 10px;border:1px solid var(--rule);border-radius:6px;
     background:#fff;color:var(--text);cursor:pointer}
   .roster-count select:focus{outline:2px solid var(--ink);outline-offset:1px}
@@ -840,7 +843,7 @@ function renderRoster(){
   el.innerHTML = `<div class="rrow rhead"><span></span><span>Player</span><span>Index</span>
       <span class="chlabel">Course hcp</span>${teams?"<span>Side</span>":""}<span></span></div>` +
     players.map((p,i) => `
-      <div class="rrow" data-row="${p.id}">
+      <div class="rrow" data-row="${p.id}" draggable="true">
         <span class="rnum">${i+1}</span>
         <input type="text" class="name-in" data-id="${p.id}" value="${escapeAttr(p.name)}"
                placeholder="Name" autocomplete="off" aria-label="Player ${i+1} name">
@@ -853,6 +856,45 @@ function renderRoster(){
                 title="${players.length<=2?"Two players minimum":"Remove player"}"
                 aria-label="Remove player ${i+1}">&times;</button>
       </div>`).join("");
+  bindRosterDrag();
+}
+
+function bindRosterDrag(){
+  let dragId = null;
+  const rows = document.querySelectorAll("#roster .rrow[draggable]");
+  rows.forEach(row => {
+    row.addEventListener("dragstart", e => {
+      dragId = +row.dataset.row;
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    row.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+      document.querySelectorAll("#roster .rrow").forEach(r => r.classList.remove("drag-over"));
+    });
+    row.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      document.querySelectorAll("#roster .rrow").forEach(r => r.classList.remove("drag-over"));
+      row.classList.add("drag-over");
+    });
+    row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+    row.addEventListener("drop", e => {
+      e.preventDefault();
+      const targetId = +row.dataset.row;
+      if (dragId === null || dragId === targetId) return;
+      const fromIdx = players.findIndex(p => p.id === dragId);
+      const toIdx   = players.findIndex(p => p.id === targetId);
+      // swap teams so dragged player takes target's team assignment
+      const fromTeam = players[fromIdx].team;
+      players[fromIdx].team = players[toIdx].team;
+      players[toIdx].team = fromTeam;
+      // reorder players array
+      const [moved] = players.splice(fromIdx, 1);
+      players.splice(toIdx, 0, moved);
+      renderRoster(); renderCard(); refresh(); pushState();
+    });
+  });
 }
 
 const escapeAttr = s => String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
@@ -861,9 +903,7 @@ function renderCard(){
   const t = TEES[tee];
   const head = `<thead><tr>
       <th>Hole</th><th>${t.label}</th><th>Par</th><th>${t.siLabel}</th>
-      ${players.map((p,i)=>`<th class="pname"><input type="text" class="name-in" data-id="${p.id}"
-        value="${escapeAttr(p.name)}" placeholder="Player ${i+1}" autocomplete="off"
-        aria-label="Player ${i+1} name"></th>`).join("")}
+      ${players.map((p,i)=>`<th class="pname"><span class="pname-txt" data-id="${p.id}">${escapeAttr(p.name) || `Player ${i+1}`}</span></th>`).join("")}
     </tr></thead>`;
 
   const hole = i => `<tr>
@@ -904,6 +944,33 @@ function renderCard(){
 
 function refresh(){
   const chs = allCh();
+
+  // compute net score per player per hole
+  const netScores = players.map((p, pi) => {
+    const ch = chs[pi];
+    return p.scores.map((g, i) => g === null ? null : g - strokesOnHole(ch, i));
+  });
+
+  // determine which player indices win each hole (team-aware)
+  const holeWinners = Array.from({length:18}, (_,i) => {
+    const allPosted = netScores.every(ns => ns[i] !== null);
+    if (!allPosted) return new Set();
+    if (nassau.mode === "teams"){
+      const A = players.map((p,pi) => p.team==="A" ? netScores[pi][i] : Infinity);
+      const B = players.map((p,pi) => p.team==="B" ? netScores[pi][i] : Infinity);
+      const bestA = Math.min(...A), bestB = Math.min(...B);
+      if (bestA === bestB) return new Set(); // tie
+      const winTeam = bestA < bestB ? "A" : "B";
+      return new Set(players.map((p,pi) => p.team===winTeam ? pi : -1).filter(v=>v>=0));
+    } else {
+      const nets = netScores.map(ns => ns[i]);
+      const low = Math.min(...nets);
+      const tied = nets.filter(v => v===low).length > 1;
+      if (tied) return new Set();
+      return new Set([nets.indexOf(low)]);
+    }
+  });
+
   players.forEach((p,pi) => {
     const ch = chs[pi];
     const chTxt = ch === null ? "—" : (ch < 0 ? "+" + Math.abs(ch) : String(ch));
@@ -920,12 +987,13 @@ function refresh(){
       const input = document.querySelector(`input[data-id="${p.id}"][data-hole="${i}"]`);
       const scoreCell = input ? input.closest(".sc") : null;
       if (scoreCell){
-        scoreCell.classList.remove("score-birdie","score-bogey","score-double");
+        scoreCell.classList.remove("score-birdie","score-bogey","score-double","hole-win");
         if (g !== null){
           const d = g - PAR[i];
           if (d < 0) scoreCell.classList.add("score-birdie");
           else if (d === 1) scoreCell.classList.add("score-bogey");
           else if (d >= 2) scoreCell.classList.add("score-double");
+          if (holeWinners[i].has(pi)) scoreCell.classList.add("hole-win");
         }
       }
       if (g !== null){ used++; strokes += s; (i < 9 ? out += g : inn += g); }
@@ -979,6 +1047,9 @@ document.addEventListener("input", e => {
   if (el.classList.contains("name-in") && p){
     p.name = el.value;
     document.querySelectorAll(`.name-in[data-id="${id}"]`).forEach(o => { if (o !== el) o.value = el.value; });
+    // update scorecard header plain-text span
+    const span = document.querySelector(`.pname-txt[data-id="${id}"]`);
+    if (span) span.textContent = el.value || `Player ${players.findIndex(x=>x.id===id)+1}`;
     pushState();
   } else if (el.classList.contains("hi-in") && p){
     p.hi = el.value; refresh(); pushState();
