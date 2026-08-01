@@ -951,23 +951,22 @@ function refresh(){
     return p.scores.map((g, i) => g === null ? null : g - strokesOnHole(ch, i));
   });
 
-  // determine which player indices win each hole (team-aware)
+  // determine which player IDs win each hole (team-aware)
   const holeWinners = Array.from({length:18}, (_,i) => {
     const allPosted = netScores.every(ns => ns[i] !== null);
     if (!allPosted) return new Set();
     if (nassau.mode === "teams"){
-      const A = players.map((p,pi) => p.team==="A" ? netScores[pi][i] : Infinity);
-      const B = players.map((p,pi) => p.team==="B" ? netScores[pi][i] : Infinity);
-      const bestA = Math.min(...A), bestB = Math.min(...B);
-      if (bestA === bestB) return new Set(); // tie
+      const bestA = Math.min(...players.map((p,pi) => p.team==="A" ? netScores[pi][i] : Infinity));
+      const bestB = Math.min(...players.map((p,pi) => p.team==="B" ? netScores[pi][i] : Infinity));
+      if (bestA === bestB) return new Set();
       const winTeam = bestA < bestB ? "A" : "B";
-      return new Set(players.map((p,pi) => p.team===winTeam ? pi : -1).filter(v=>v>=0));
+      return new Set(players.filter(p => p.team === winTeam).map(p => p.id));
     } else {
       const nets = netScores.map(ns => ns[i]);
       const low = Math.min(...nets);
-      const tied = nets.filter(v => v===low).length > 1;
+      const tied = nets.filter(v => v === low).length > 1;
       if (tied) return new Set();
-      return new Set([nets.indexOf(low)]);
+      return new Set([players[nets.indexOf(low)].id]);
     }
   });
 
@@ -993,7 +992,7 @@ function refresh(){
           if (d < 0) scoreCell.classList.add("score-birdie");
           else if (d === 1) scoreCell.classList.add("score-bogey");
           else if (d >= 2) scoreCell.classList.add("score-double");
-          if (holeWinners[i].has(pi)) scoreCell.classList.add("hole-win");
+          if (holeWinners[i].has(p.id)) scoreCell.classList.add("hole-win");
         }
       }
       if (g !== null){ used++; strokes += s; (i < 9 ? out += g : inn += g); }
